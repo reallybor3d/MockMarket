@@ -30,6 +30,8 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+//but what i'm assuming is that it dont work that well right
+
 @Composable
 fun Greeting(name: String, modifier: Modifier = Modifier) {
     Text(
