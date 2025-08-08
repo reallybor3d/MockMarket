@@ -1,3 +1,28 @@
 <resources>
     <string name="app_name">MockMarket</string>
+    <string name="welcome_message">Welcome to MockMarket</string>
+    <string name="browse">📈 Browse Market</string>
+    <string name="view_portfolio">💼 View Portfolio</string>
+    <string name="appear_portfolio">Your Portfolio will appear here.</string>
+    <string name="loading_market">Market Data Loading…</string>
+    <string name="stock_price">%1$s: $%2$.2f</string>
+    <string name="api_error">API Error: %1$d</string>
+    <string name="api_failure">Failed to fetch data</string>
+
+    <string name = "enter_stock">Enter stock symbol (e.g. AAPL)</string>
+    <string name = "get_stock">Get Stock Price</string>
+    <string name = "stock_info">Stock info will show here</string>
+
+    <string name="hint_enter_ticker">Enter ticker (e.g., AAPL)</string>
+    <string name="btn_search">Search</string>
+
+    <string name="tf_1d">1D</string>
+    <string name="tf_1w">1W</string>
+    <string name="tf_1m">1M</string>
+    <string name="tf_1y">1Y</string>
+    <string name="tf_max">MAX</string>
+
+    <string name="no_data">No data</string>
+    <string name="api_error_code">API error: %1$d</string>
+    <string name="network_error">Network error: %1$s</string>
 </resources>
