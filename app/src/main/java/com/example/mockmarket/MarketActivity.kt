@@ -16,7 +16,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 class MarketActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMarketBinding
-    private val apiKey = "PRIVATE"
+    private val apiKey = "private"
 
     private val retrofit by lazy {
         Retrofit.Builder()
