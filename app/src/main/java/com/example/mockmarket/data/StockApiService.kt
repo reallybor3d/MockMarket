@@ -1,4 +1,4 @@
-package com.example.mockmarket
+package com.example.mockmarket.data
 
 import retrofit2.Call
 import retrofit2.http.GET

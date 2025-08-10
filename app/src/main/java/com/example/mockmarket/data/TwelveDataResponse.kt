@@ -1,4 +1,4 @@
-package com.example.mockmarket
+package com.example.mockmarket.data
 
 data class TwelveDataResponse(
     val status: String,

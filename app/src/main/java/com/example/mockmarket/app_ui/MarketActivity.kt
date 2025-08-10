@@ -1,8 +1,12 @@
-package com.example.mockmarket
+package com.example.mockmarket.app_ui
 
 import android.os.Bundle
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.example.mockmarket.R
+import com.example.mockmarket.data.StockApiService
+import com.example.mockmarket.data.TimeSeriesValue
+import com.example.mockmarket.data.TwelveDataResponse
 import com.example.mockmarket.databinding.ActivityMarketBinding
 import com.github.mikephil.charting.components.Description
 import com.github.mikephil.charting.components.XAxis
@@ -13,10 +17,20 @@ import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
 import retrofit2.*
 import retrofit2.converter.gson.GsonConverterFactory
 
+data class TimeFrame(val interval: String, val outputSize: Int)
+
 class MarketActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMarketBinding
     private val apiKey = "private"
+
+    private val timeFrames = mapOf(
+        R.id.btn1D to TimeFrame("1day", 2), //day
+        R.id.btn1W to TimeFrame("1day", 5), //week
+        R.id.btn1M to TimeFrame("1day", 22), //month
+        R.id.btn1Y to TimeFrame("1month", 12), //year
+        R.id.btnMax to TimeFrame("1month", 1000) //max
+    )
 
     private val retrofit by lazy {
         Retrofit.Builder()
@@ -28,16 +42,17 @@ class MarketActivity : AppCompatActivity() {
     private val service by lazy { retrofit.create(StockApiService::class.java) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+
         super.onCreate(savedInstanceState)
         binding = ActivityMarketBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         setupChart()
 
-        // Default: AAPL 1D
+        // AAPL 1D is default
         fetchAndRender("AAPL", "1day", 30)
 
-        // Search button
+        // search button
         binding.btnFetch.setOnClickListener {
             val symbol = binding.etSymbol.text.toString().trim().uppercase()
             if (symbol.isEmpty()) {
@@ -47,12 +62,12 @@ class MarketActivity : AppCompatActivity() {
             }
         }
 
-        // Timeframe buttons
-        binding.btn1D.setOnClickListener  { fetchAndRender(getSymbolInput(), "1day", 30) }
-        binding.btn1W.setOnClickListener  { fetchAndRender(getSymbolInput(), "1week", 30) }
-        binding.btn1M.setOnClickListener  { fetchAndRender(getSymbolInput(), "1month", 30) }
-        binding.btn1Y.setOnClickListener  { fetchAndRender(getSymbolInput(), "1month", 365) } // Approximates 1 year
-        binding.btnMax.setOnClickListener { fetchAndRender(getSymbolInput(), "1month", 1000) } // Longest
+        // timeframe buttons
+        timeFrames.forEach { (buttonId, timeFrame) ->
+            findViewById<android.view.View>(buttonId).setOnClickListener {
+                fetchAndRender(getSymbolInput(), timeFrame.interval, timeFrame.outputSize)
+            }
+        }
     }
 
     private fun getSymbolInput(): String {
@@ -91,13 +106,26 @@ class MarketActivity : AppCompatActivity() {
         val entries = ArrayList<Entry>()
         val labels = ArrayList<String>()
 
-        for ((index, value) in values.reversed().withIndex()) {
+        val processedValues = when {
+            values.isEmpty() -> emptyList()
+            values.size == 1 -> listOf(values[0], values[0]) // Duplicate single point to allow chart rendering
+            else -> values.reversed() // Reverse for proper left-to-right time order
+        }
+
+        for ((index, value) in processedValues.withIndex()) {
             val close = value.close.toFloatOrNull() ?: continue
             entries.add(Entry(index.toFloat(), close))
             labels.add(value.datetime)
         }
 
-        val set = LineDataSet(entries, "$symbol")
+        if (entries.isEmpty()) {
+            binding.lineChart.clear()
+            binding.lineChart.setNoDataText("No valid data to display")
+            binding.lineChart.invalidate()
+            return
+        }
+
+        val set = LineDataSet(entries, symbol)
         set.setDrawCircles(false)
         set.lineWidth = 2f
         set.setDrawValues(false)

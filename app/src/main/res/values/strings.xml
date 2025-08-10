@@ -25,4 +25,14 @@
     <string name="no_data">No data</string>
     <string name="api_error_code">API error: %1$d</string>
     <string name="network_error">Network error: %1$s</string>
+
+    <string name="hint_username">Username</string>
+    <string name="hint_password">Password</string>
+    <string name="btn_login">Log in</string>
+    <string name="btn_create_account">First time user? Create account</string>
+
+    <string name="pick_user">Pick a username</string>
+    <string name="username">username</string>
+    <string name="confirm">Confirm</string>
+
 </resources>

@@ -1,4 +1,4 @@
-package com.example.mockmarket
+package com.example.mockmarket.app_ui
 
 import android.content.Intent
 import android.os.Bundle
