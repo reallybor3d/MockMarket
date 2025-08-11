@@ -7,6 +7,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.example.mockmarket.databinding.StartupBinding
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 
 class StartupPage : AppCompatActivity() {
@@ -20,77 +21,91 @@ class StartupPage : AppCompatActivity() {
         binding = StartupBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // firebase is on
         FirebaseApp.initializeApp(this)
-
         auth = FirebaseAuth.getInstance()
         db = FirebaseFirestore.getInstance()
 
+        // Auto sign-in on launch
+        signInAndProceed()
+
+        // Manual login fallback
         binding.btnLogin.setOnClickListener {
-            auth.signInAnonymously()
-                .addOnSuccessListener { result ->
-                    val uid = result.user!!.uid
-                    val userRef = db.collection("users").document(uid)
-                    userRef.get().addOnSuccessListener { snap ->
-                        if (!snap.exists()) {
-                            userRef.set(
-                                mapOf(
-                                    "cash" to 100_000.0,
-                                    "equity" to 100_000.0,
-                                    "username" to null,
-                                    "createdAt" to com.google.firebase.firestore.FieldValue.serverTimestamp(),
-                                    "lastEquityAt" to com.google.firebase.firestore.FieldValue.serverTimestamp()
-                                )
-                            ).addOnSuccessListener { goNext() }
-                        } else {
-                            goNext()
-                        }
-                    }.addOnFailureListener { e ->
-                        Toast.makeText(this, "Read failed: ${e.message}", Toast.LENGTH_SHORT).show()
-                    }
-                }
-                .addOnFailureListener { e ->
-                    Toast.makeText(this, "Auth failed: ${e.message}", Toast.LENGTH_SHORT).show()
-                }
+            signInAndProceed()
         }
 
         binding.btnCreateAccount.setOnClickListener {
             val user = auth.currentUser
             if (user == null) {
-                auth.signInAnonymously()
-                    .addOnSuccessListener { goToUsernameScreen() }
-                    .addOnFailureListener { e ->
-                        Toast.makeText(this, "Auth failed: ${e.message}", Toast.LENGTH_SHORT).show()
-                    }
+                signIn { goToUsernameScreen() }
             } else {
                 goToUsernameScreen()
             }
         }
     }
 
-    private fun goNext() {
-        val uid = auth.currentUser?.uid
-        if (uid == null) {
-            Toast.makeText(this, "Not signed in", Toast.LENGTH_SHORT).show()
-            return
-        }
+    private fun signInAndProceed() {
+        disableButtons()
+        signIn { goNext() }
+    }
 
-        db.collection("users").document(uid).get()
+    private fun signIn(onSuccess: () -> Unit) {
+        auth.signInAnonymously()
+            .addOnSuccessListener { onSuccess() }
+            .addOnFailureListener { e ->
+                Toast.makeText(this, "Auth failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                enableButtons()
+            }
+    }
+
+    private fun goNext() {
+        val uid = auth.currentUser?.uid ?: return
+        val userRef = db.collection("users").document(uid)
+
+        userRef.get()
             .addOnSuccessListener { snap ->
-                val uname = snap.get("username") as? String
-                val hasUsername = !uname.isNullOrBlank()
-                if (hasUsername) {
-                    startActivity(Intent(this, DashboardActivity::class.java))
+                val uname = snap.getString("username")
+                if (!uname.isNullOrBlank()) {
+                    startActivity(Intent(this, MainActivity::class.java))
+                    finish()
                 } else {
-                    goToUsernameScreen()
+                    if (!snap.exists()) {
+                        userRef.set(
+                            mapOf(
+                                "cash" to 100_000.0,
+                                "equity" to 100_000.0,
+                                "createdAt" to FieldValue.serverTimestamp(),
+                                "lastEquityAt" to FieldValue.serverTimestamp()
+                            )
+                        ).addOnSuccessListener { goToUsernameScreen() }
+                            .addOnFailureListener { e ->
+                                Toast.makeText(this, "Setup failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                                enableButtons()
+                            }
+                    } else {
+                        goToUsernameScreen()
+                    }
                 }
             }
             .addOnFailureListener { e ->
                 Toast.makeText(this, "Load failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                enableButtons()
             }
     }
 
     private fun goToUsernameScreen() {
         startActivity(Intent(this, UsernameActivity::class.java))
+        finish()
+    }
+
+    private fun disableButtons() {
+        binding.btnLogin.isEnabled = false
+        binding.btnCreateAccount.isEnabled = false
+    }
+
+    private fun enableButtons() {
+        binding.btnLogin.isEnabled = true
+        binding.btnCreateAccount.isEnabled = true
     }
 }
+
+//

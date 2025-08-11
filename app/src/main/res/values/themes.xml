@@ -1,9 +1,20 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Your normal app theme -->
     <style name="Theme.MockMarket" parent="Theme.AppCompat.DayNight.DarkActionBar">
-        <!-- You can optionally customize colors below -->
         <item name="colorPrimary">@color/purple_500</item>
         <item name="colorPrimaryDark">@color/purple_700</item>
         <item name="colorAccent">@color/teal_200</item>
+    </style>
+
+    <!-- Launcher/Splash theme (used only by SplashActivity) -->
+    <style name="Theme.MockMarket.Splash" parent="Theme.SplashScreen">
+        <!-- Solid background while splash shows -->
+        <item name="windowSplashScreenBackground">@android:color/black</item>
+        <!-- Icon (animated if you supply an animated drawable); fallback: launcher icon -->
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <!-- Optional duration tweak (ms) -->
+        <!-- <item name="windowSplashScreenAnimationDuration">300</item> -->
+        <!-- After splash finishes, switch to your normal theme -->
+        <item name="postSplashScreenTheme">@style/Theme.MockMarket</item>
     </style>
 </resources>

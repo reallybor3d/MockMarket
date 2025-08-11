@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.example.mockmarket.R
+import com.example.mockmarket.data.PortfolioRepository
 import com.example.mockmarket.data.StockApiService
 import com.example.mockmarket.data.TimeSeriesValue
 import com.example.mockmarket.data.TwelveDataResponse
@@ -17,7 +18,10 @@ import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.data.LineDataSet
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
-import retrofit2.*
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 class StocksFragment : Fragment() {
@@ -25,10 +29,10 @@ class StocksFragment : Fragment() {
     private var _binding: FragmentStocksBinding? = null
     private val binding get() = _binding!!
 
-    private val apiKey = "priavte" // API KEY
+    // TODO: move API key to safer place later
+    private val apiKey = "d1df3020933a4fdca8b35966e9e0d538" //API key
 
     private data class TimeFrame(val interval: String, val outputSize: Int)
-
     private val timeFrames = mapOf(
         R.id.btn1D to TimeFrame("1day", 30),
         R.id.btn1W to TimeFrame("1day", 5),
@@ -56,13 +60,13 @@ class StocksFragment : Fragment() {
     override fun onViewCreated(v: View, s: Bundle?) {
         setupChart()
 
-        // default
+        // Default load
         fetchAndRender("AAPL", "1day", 30)
 
         binding.btnSearch.setOnClickListener {
             val symbol = binding.etSymbol.text.toString().trim().uppercase()
             if (symbol.isEmpty()) {
-                Toast.makeText(requireContext(), "Please enter a ticker", Toast.LENGTH_SHORT).show()
+                toast("Please enter a ticker")
             } else {
                 fetchAndRender(symbol, "1day", 30)
             }
@@ -85,14 +89,23 @@ class StocksFragment : Fragment() {
         binding.lineChart.description = Description().apply { text = "" }
         binding.lineChart.axisRight.isEnabled = false
         binding.lineChart.xAxis.position = XAxis.XAxisPosition.BOTTOM
-        binding.lineChart.setNoDataText(getString(com.example.mockmarket.R.string.no_data))
+        binding.lineChart.setNoDataText(getString(R.string.no_data))
+    }
+
+    private fun setLoading(loading: Boolean) {
+        binding.btnSearch.isEnabled = !loading
+        binding.btnBuy.isEnabled = !loading
+        binding.btnSell.isEnabled = !loading
+        binding.etSymbol.isEnabled = !loading
     }
 
     private fun fetchAndRender(symbol: String, interval: String, outputSize: Int) {
         currentSymbol = symbol
+        setLoading(true)
         service.getTimeSeries(symbol, interval, apiKey, outputSize)
             .enqueue(object : Callback<TwelveDataResponse> {
                 override fun onResponse(call: Call<TwelveDataResponse>, response: Response<TwelveDataResponse>) {
+                    setLoading(false)
                     val body = response.body()
                     if (!response.isSuccessful || body == null || body.status != "ok" || body.values.isEmpty()) {
                         binding.lineChart.clear()
@@ -107,7 +120,8 @@ class StocksFragment : Fragment() {
                     renderChart(symbol, body.values)
                 }
                 override fun onFailure(call: Call<TwelveDataResponse>, t: Throwable) {
-                    Toast.makeText(requireContext(), "Network error: ${t.message}", Toast.LENGTH_SHORT).show()
+                    setLoading(false)
+                    toast("Network error: ${t.message}")
                 }
             })
     }
@@ -147,19 +161,32 @@ class StocksFragment : Fragment() {
     private fun place(side: String) {
         val qty = binding.etQty.text.toString().toDoubleOrNull() ?: 0.0
         if (qty <= 0 || currentSymbol.isBlank() || lastPrice <= 0.0) {
-            Toast.makeText(requireContext(), "Enter symbol, qty and load price first", Toast.LENGTH_SHORT).show()
+            toast("Enter symbol, qty and load price first")
             return
         }
+        // Place order
         com.example.mockmarket.data.FirestoreRepository.placeOrder(
             symbol = currentSymbol,
             side = side,
             qty = qty,
             price = lastPrice,
-            onOk = { Toast.makeText(requireContext(), "Order filled", Toast.LENGTH_SHORT).show() },
-            onErr = { msg -> Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show() }
+            onOk = {
+                toast("Order filled")
+                // Recompute equity using the current symbol's last price (quick refresh)
+                PortfolioRepository.refreshEquityWithQuotes(
+                    quotes = mapOf(currentSymbol to lastPrice),
+                    onDone = { /* optionally update a header via activity, if you expose one */ },
+                    onErr = { /* you can toast it if you want */ }
+                )
+            },
+            onErr = { msg -> toast(msg) }
         )
-        // TODO: after order, recompute equity and refresh header/leaderboard if needed
     }
 
-    override fun onDestroyView() { super.onDestroyView(); _binding = null }
+    private fun toast(msg: String) =
+        Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
+
+    override fun onDestroyView() {
+        super.onDestroyView(); _binding = null
+    }
 }

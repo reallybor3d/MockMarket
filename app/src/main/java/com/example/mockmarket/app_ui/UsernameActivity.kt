@@ -8,6 +8,8 @@ import com.example.mockmarket.databinding.ActivityUsernameBinding
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Transaction
+import com.google.firebase.firestore.SetOptions
+import com.google.firebase.firestore.FirebaseFirestoreException
 
 class UsernameActivity : AppCompatActivity() {
 
@@ -17,6 +19,8 @@ class UsernameActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        android.util.Log.d("MM_DBG", "projectId=" + com.google.firebase.FirebaseApp.getInstance().options.projectId)
+        android.util.Log.d("MM_DBG", "uid=" + FirebaseAuth.getInstance().currentUser?.uid)
         binding = ActivityUsernameBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -25,51 +29,62 @@ class UsernameActivity : AppCompatActivity() {
             val key = raw.lowercase()
 
             if (raw.length < 3) {
-                Toast.makeText(this, "Username too short", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
+                toast("Username too short"); return@setOnClickListener
             }
-            // Optional: enforce simple charset
             if (!key.matches(Regex("^[a-z0-9_]{3,30}$"))) {
-                Toast.makeText(this, "Use a–z, 0–9, _ (3–30 chars)", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
+                toast("Use a–z, 0–9, _ (3–30 chars)"); return@setOnClickListener
             }
             claimUsername(raw, key)
         }
     }
 
     private fun claimUsername(displayName: String, keyLower: String) {
-        val user = auth.currentUser
-        if (user == null) {
-            Toast.makeText(this, "Not signed in", Toast.LENGTH_SHORT).show()
-            return
+        val user = auth.currentUser ?: run {
+            Toast.makeText(this, "Not signed in", Toast.LENGTH_SHORT).show(); return
         }
         val uid = user.uid
         val unameRef = db.collection("usernames").document(keyLower)
         val userRef  = db.collection("users").document(uid)
 
-        db.runTransaction { tx: Transaction ->
-            // Fail if taken
-            if (tx.get(unameRef).exists()) throw IllegalStateException("USERNAME_TAKEN")
+        binding.btnConfirm.isEnabled = false
 
-            // Reserve activity_username.xml -> uid
-            tx.set(unameRef, mapOf("uid" to uid))
-
-            // Set on profile (store lowercase, or your original string—your call)
-            tx.update(userRef, mapOf("username" to displayName))
-            null
-        }
-            .addOnSuccessListener {
-                Toast.makeText(this, "Username set!", Toast.LENGTH_SHORT).show()
-                startActivity(Intent(this, DashboardActivity::class.java))
-                finish()
+        // 1) Ensure not taken
+        unameRef.get().addOnSuccessListener { s ->
+            if (s.exists()) {
+                Toast.makeText(this, "Username is taken", Toast.LENGTH_SHORT).show()
+                binding.btnConfirm.isEnabled = true
+                return@addOnSuccessListener
             }
-            .addOnFailureListener { e ->
-                val msg = if (e.message?.contains("USERNAME_TAKEN") == true) {
-                    "Username is taken"
-                } else {
-                    e.message ?: "Failed to set username"
+
+            // 2) Reserve /usernames/{name} -> { uid }
+            unameRef.set(mapOf("uid" to uid))
+                .addOnSuccessListener {
+                    // 3) Write username on profile (merge)
+                    userRef.set(mapOf("username" to displayName), com.google.firebase.firestore.SetOptions.merge())
+                        .addOnSuccessListener {
+                            Toast.makeText(this, "Username set!", Toast.LENGTH_SHORT).show()
+                            startActivity(Intent(this, MainActivity::class.java))
+                            finish()
+                        }
+                        .addOnFailureListener { e ->
+                            android.util.Log.e("MM_DBG", "FAIL users/$uid : ${e.message}", e)
+                            Toast.makeText(this, "Failed updating profile: ${e.message}", Toast.LENGTH_SHORT).show()
+                            binding.btnConfirm.isEnabled = true
+                        }
                 }
-                Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
-            }
+                .addOnFailureListener { e ->
+                    android.util.Log.e("MM_DBG", "FAIL usernames/$keyLower : ${e.message}", e)
+                    Toast.makeText(this, "Failed reserving username: ${e.message}", Toast.LENGTH_SHORT).show()
+                    binding.btnConfirm.isEnabled = true
+                }
+        }.addOnFailureListener { e ->
+            android.util.Log.e("MM_DBG", "FAIL check usernames/$keyLower : ${e.message}", e)
+            Toast.makeText(this, "Failed checking username: ${e.message}", Toast.LENGTH_SHORT).show()
+            binding.btnConfirm.isEnabled = true
+        }
+    }
+
+    private fun toast(msg: String) {
+        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
     }
 }
