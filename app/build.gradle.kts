@@ -75,4 +75,6 @@ dependencies {
     implementation("androidx.recyclerview:recyclerview:1.3.2")   // Leaderboard
     implementation("androidx.fragment:fragment:1.7.1")
     implementation("androidx.core:core-splashscreen:1.0.1")
+    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
+
 }

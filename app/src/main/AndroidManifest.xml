@@ -11,7 +11,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MockMarket">
 
-        <!-- Launcher -->
+        <!-- launch -->
         <activity
             android:name="com.example.mockmarket.app_ui.SplashActivity"
             android:exported="true">
@@ -21,7 +21,7 @@
             </intent-filter>
         </activity>
 
-        <!-- App screens -->
+        <!-- screens -->
         <activity
             android:name="com.example.mockmarket.app_ui.MainActivity"
             android:exported="false" />

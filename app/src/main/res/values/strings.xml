@@ -32,7 +32,33 @@
     <string name="btn_create_account">First time user? Create account</string>
 
     <string name="pick_user">Pick a username</string>
-    <string name="username">username</string>
+    <string name="username">Username</string>
     <string name="confirm">Confirm</string>
+    <string name="stockmarket">Stock Market</string>
+    <string name="leaderboard">Leaderboard</string>
+    <string name="settings">Settings</string>
+    <string name="dash">Dashboard</string>
+    <string name="stocks">Stocks</string>
+
+    <string name="AAPL">AAPL</string>
+    <string name="qty">Qty: 0</string>
+    <string name="avg">Avg: $0.00</string>
+    <string name="price">Price: $0.00</string>
+    <string name="value">Value: $0.00</string>
+    <string name="p_l">P/L: $0.00 (0.0%)</string>
+
+    <string name="cash">Cash</string>
+    <string name="equity">Equity</string>
+    <string name="base_price">$0.00</string>
+    <string name="unrealized">Unrealized P/L</string>
+
+    <string name="qty_fmt">Qty: %1$.2f</string>
+    <string name="avg_fmt">Avg: %1$s</string>
+    <string name="price_fmt">Price: %1$s</string>
+    <string name="value_fmt">Value: %1$s</string>
+    <string name="pnl_fmt">P/L: %1$s (%2$.1f%%)</string>
+
+    <string name="signout">Sign out</string>
+    <string name="clear">Clear demo holdings and reset equity</string>
 
 </resources>
