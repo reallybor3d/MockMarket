@@ -27,13 +27,6 @@ object PortfolioRepository {
 
     private fun r2(v: Double) = round(v * 100.0) / 100.0
 
-    /**
-     * Recompute portfolio equity and score using provided quotes, and
-     * fetch prices for any missing symbols from TwelveData.
-     *
-     * - equity = sum(qty * price) for all holdings (positions only)
-     * - score  = cash + equity (for leaderboard ordering)
-     */
     fun refreshEquityWithQuotes(
         quotes: Map<String, Double>,
         onDone: () -> Unit,
@@ -43,7 +36,6 @@ object PortfolioRepository {
         val userRef = db.collection("users").document(uid)
         val holdingsRef = userRef.collection("holdings")
 
-        // 1) Read user (for cash) and holdings (for symbols/qty)
         userRef.get().addOnSuccessListener { userSnap ->
             val cash = userSnap.getDouble("cash") ?: 0.0
 
@@ -67,12 +59,10 @@ object PortfolioRepository {
                         return@addOnSuccessListener
                     }
 
-                    // 2) Start with provided quotes; fetch missing symbols
                     val prices = quotes.toMutableMap()
                     val toFetch = holdings.map { it.first }.filter { it !in prices }
 
                     if (toFetch.isEmpty()) {
-                        // 3) All prices known → compute & write
                         val equity = computeEquity(holdings, prices)
                         writeEquity(userRef, cash, equity, onDone, onErr)
                     } else {
@@ -112,19 +102,15 @@ object PortfolioRepository {
     ) {
         userRef.update(
             mapOf(
-                "equity" to equity,                 // positions only
-                "score" to r2(cash + equity),       // for leaderboard
+                "equity" to equity,
+                "score" to r2(cash + equity),
                 "lastEquityAt" to FieldValue.serverTimestamp()
             )
         ).addOnSuccessListener { onDone() }
             .addOnFailureListener { e -> onErr(e.message ?: "Failed to write equity") }
     }
 
-    /**
-     * Fetch latest close price for each missing symbol (fail-soft: 0.0 on error).
-     * Uses the same endpoint you already call elsewhere:
-     *   service.getTimeSeries(sym, "1day", API_KEY, 1)
-     */
+
     private fun fetchMissingPrices(
         symbols: List<String>,
         onEach: (String, Double) -> Unit,
@@ -154,7 +140,7 @@ object PortfolioRepository {
                 }
 
                 override fun onFailure(call: Call<TwelveDataResponse>, t: Throwable) {
-                    // fail-soft: record 0.0 so flow completes
+                    // fail-soft: record 0.0  - Maybe add this back in later
                     onEach(sym, 0.0)
                     if (--remaining == 0) onAllDone()
                 }

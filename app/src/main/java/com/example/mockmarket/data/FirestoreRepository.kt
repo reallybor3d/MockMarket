@@ -18,7 +18,7 @@ object FirestoreRepository {
 
     fun placeOrder(
         symbol: String,
-        side: String,           // "BUY" or "SELL"
+        side: String,
         qty: Double,
         price: Double,
         onOk: () -> Unit,
@@ -78,10 +78,10 @@ object FirestoreRepository {
                 throw IllegalArgumentException("Invalid side")
             }
 
-            // Update cash (rounded)
+            // Update cash
             txn.update(userRef, mapOf("cash" to r2(cash)))
 
-            // Log transaction (richer fields)
+            // Log transaction
             txn.set(
                 txRef,
                 mapOf(

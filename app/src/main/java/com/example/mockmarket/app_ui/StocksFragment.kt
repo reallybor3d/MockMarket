@@ -29,7 +29,6 @@ class StocksFragment : Fragment() {
     private var _binding: FragmentStocksBinding? = null
     private val binding get() = _binding!!
 
-    // TODO: move API key to safer place later
     private val apiKey = "d1df3020933a4fdca8b35966e9e0d538" //API key
 
     private data class TimeFrame(val interval: String, val outputSize: Int)
@@ -60,7 +59,6 @@ class StocksFragment : Fragment() {
     override fun onViewCreated(v: View, s: Bundle?) {
         setupChart()
 
-        // Default load
         fetchAndRender("AAPL", "1day", 30)
 
         binding.btnSearch.setOnClickListener {
@@ -114,7 +112,7 @@ class StocksFragment : Fragment() {
                         lastPrice = 0.0
                         return
                     }
-                    // set last price from most recent value
+
                     val latest = body.values.firstOrNull()
                     lastPrice = latest?.close?.toDoubleOrNull() ?: 0.0
                     renderChart(symbol, body.values)
@@ -172,11 +170,11 @@ class StocksFragment : Fragment() {
             price = lastPrice,
             onOk = {
                 toast("Order filled")
-                // Recompute equity using the current symbol's last price (quick refresh)
+
                 PortfolioRepository.refreshEquityWithQuotes(
                     quotes = mapOf(currentSymbol to lastPrice),
-                    onDone = { /* optionally update a header via activity, if you expose one */ },
-                    onErr = { /* you can toast it if you want */ }
+                    onDone = { /* maybe update a header via activity*/ },
+                    onErr = { /* toast later */ }
                 )
             },
             onErr = { msg -> toast(msg) }

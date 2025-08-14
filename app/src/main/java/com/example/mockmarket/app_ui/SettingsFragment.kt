@@ -48,20 +48,20 @@ class SettingsFragment : Fragment() {
         val holdingsRef = userRef.collection("holdings")
         val txRef = userRef.collection("transactions")
 
-        // 1) Read cash (to recompute score = cash + equity)
+        // Read cash
         userRef.get().addOnSuccessListener { userSnap ->
             val cash = userSnap.getDouble("cash") ?: 0.0
 
-            // 2) Fetch holdings & transactions to delete
+            // Fetch holdings
             holdingsRef.get().continueWithTask { holdingsTask ->
                 val batch = db.batch()
                 holdingsTask.result?.documents?.forEach { batch.delete(it.reference) }
 
-                // Optional: wipe transactions for a clean slate
+                // Wipe previous transactions
                 txRef.get().addOnSuccessListener { txQs ->
                     txQs.documents.forEach { batch.delete(it.reference) }
 
-                    // 3) Reset equity and score (equity=0; score=cash)
+                    // Reset EVERYTHING
                     batch.update(userRef, mapOf(
                         "equity" to 0.0,
                         "score" to cash,

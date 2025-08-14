@@ -17,7 +17,6 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         if (savedInstanceState == null) {
-            // Default tab = Dashboard
             openFragment(DashboardFragment(), addToBackStack = false)
             binding.bottomNav.selectedItemId = R.id.nav_dashboard
         }

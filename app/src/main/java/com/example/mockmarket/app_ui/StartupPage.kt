@@ -25,10 +25,8 @@ class StartupPage : AppCompatActivity() {
         auth = FirebaseAuth.getInstance()
         db = FirebaseFirestore.getInstance()
 
-        // Auto sign-in on launch
         signInAndProceed()
 
-        // Manual login fallback
         binding.btnLogin.setOnClickListener {
             signInAndProceed()
         }

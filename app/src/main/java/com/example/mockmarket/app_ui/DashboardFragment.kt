@@ -42,15 +42,14 @@ class DashboardFragment : Fragment() {
             (requireActivity() as MainActivity).openFragment(SettingsFragment())
         }
 
-        // Start realtime updates
+        // Realtime UPDATES
         attachRealtimeHeader()
-        // Also do one explicit load to show progress on first entry
         loadOnce()
     }
 
     private fun attachRealtimeHeader() {
         val uid = auth.currentUser?.uid ?: return
-        // Clean any previous
+        // Cleaning from previous load
         headerListener?.remove()
         headerListener = db.collection("users").document(uid)
             .addSnapshotListener { snap, err ->
@@ -122,5 +121,5 @@ class DashboardFragment : Fragment() {
     }
 }
 
-/** tiny formatter */
+/** DONT MOVE THIS */
 private fun money(x: Double): String = "$" + "%,.2f".format(x)

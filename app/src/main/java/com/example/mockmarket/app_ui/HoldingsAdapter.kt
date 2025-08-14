@@ -16,7 +16,6 @@ class HoldingsAdapter(
     private val onClick: (PricedHolding) -> Unit = {}
 ) : ListAdapter<PricedHolding, HoldingsAdapter.VH>(DIFF) {
 
-    /** Convenience wrapper so fragment can call adapter.submit(list) */
     fun submit(items: List<PricedHolding>) = submitList(items)
 
     companion object {

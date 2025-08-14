@@ -36,7 +36,7 @@ class PortfolioFragment : Fragment() {
     }
     private val service by lazy { retrofit.create(StockApiService::class.java) }
 
-    private val adapter by lazy { HoldingsAdapter() } // <- typed to PricedHolding in your project
+    private val adapter by lazy { HoldingsAdapter() }
 
     private var cash = 0.0
 
@@ -85,7 +85,6 @@ class PortfolioFragment : Fragment() {
                     adapter.submitList(emptyList())
                     renderTotals(cash, 0.0, 0.0)
 
-                    // keep backend equity/score consistent when no positions
                     com.example.mockmarket.data.PortfolioRepository.refreshEquityWithQuotes(
                         quotes = emptyMap(),
                         onDone = { /* no-op */ },
@@ -96,16 +95,14 @@ class PortfolioFragment : Fragment() {
                     return@addOnSuccessListener
                 }
 
-                // 3) fetch latest prices for each symbol
                 fetchLatestPrices(raw) { priced ->
-                    // Directly submit PricedHolding list to adapter
                     adapter.submitList(priced)
 
                     val equity = priced.sumOf { it.marketValue }
                     val pnl = priced.sumOf { it.unrealizedPnL }
                     renderTotals(cash, equity, pnl)
 
-                    // Write fresh equity (positions only) + score(cash+equity) to Firestore
+                    // Updating to firestore
                     val quotes = priced.associate { it.symbol to it.lastPrice }
                     com.example.mockmarket.data.PortfolioRepository.refreshEquityWithQuotes(
                         quotes = quotes,
@@ -185,7 +182,6 @@ class PortfolioFragment : Fragment() {
     }
 }
 
-/** Local models **/
 data class Holding(val symbol: String, val qty: Double, val avgCost: Double) {
     fun withPrice(price: Double): PricedHolding {
         val mv = price * qty

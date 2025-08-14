@@ -15,20 +15,17 @@ class SplashActivity : AppCompatActivity() {
     private lateinit var db: FirebaseFirestore
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // Must be before super.onCreate()
         installSplashScreen()
         super.onCreate(savedInstanceState)
 
-        // Init Firebase
         FirebaseApp.initializeApp(this)
         auth = FirebaseAuth.getInstance()
         db = FirebaseFirestore.getInstance()
 
-        // Anonymous sign-in then proceed
         auth.signInAnonymously()
             .addOnSuccessListener { goNext() }
             .addOnFailureListener {
-                // retry once, then give up
+                // if fails, try again ONCE
                 auth.signInAnonymously()
                     .addOnSuccessListener { goNext() }
                     .addOnFailureListener { finish() }
@@ -46,7 +43,6 @@ class SplashActivity : AppCompatActivity() {
                     goMain()
                 } else {
                     if (!snap.exists()) {
-                        // First launch: create base user doc
                         userRef.set(
                             mapOf(
                                 "cash" to 100_000.0,
@@ -55,7 +51,7 @@ class SplashActivity : AppCompatActivity() {
                                 "lastEquityAt" to FieldValue.serverTimestamp()
                             )
                         ).addOnSuccessListener { goUsername() }
-                            .addOnFailureListener { goUsername() } // still allow username flow
+                            .addOnFailureListener { goUsername() }
                     } else {
                         goUsername()
                     }

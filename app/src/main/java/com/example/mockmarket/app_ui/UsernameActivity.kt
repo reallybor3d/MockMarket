@@ -48,7 +48,6 @@ class UsernameActivity : AppCompatActivity() {
 
         binding.btnConfirm.isEnabled = false
 
-        // 1) Ensure not taken
         unameRef.get().addOnSuccessListener { s ->
             if (s.exists()) {
                 Toast.makeText(this, "Username is taken", Toast.LENGTH_SHORT).show()
@@ -56,10 +55,8 @@ class UsernameActivity : AppCompatActivity() {
                 return@addOnSuccessListener
             }
 
-            // 2) Reserve /usernames/{name} -> { uid }
             unameRef.set(mapOf("uid" to uid))
                 .addOnSuccessListener {
-                    // 3) Write username on profile (merge)
                     userRef.set(mapOf("username" to displayName), com.google.firebase.firestore.SetOptions.merge())
                         .addOnSuccessListener {
                             Toast.makeText(this, "Username set!", Toast.LENGTH_SHORT).show()
